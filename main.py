@@ -36,6 +36,9 @@ from db.init_db import init_db
 init_db()
 
 def main():
+    print(f"DEBUG: BOT_TOKEN present: {bool(config.BOT_TOKEN)}")
+    print(f"DEBUG: ALL ENV KEYS: {list(os.environ.keys())}")
+
     if not config.BOT_TOKEN:
         print("Error: BOT_TOKEN not found in .env")
         return
