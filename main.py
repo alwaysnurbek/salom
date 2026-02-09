@@ -113,6 +113,7 @@ def main():
     application.add_handler(CallbackQueryHandler(end_test_callback, pattern="^end_test_"))
     application.add_handler(CallbackQueryHandler(admin_leaderboard_menu, pattern="^admin_leaderboard_menu$"))
     application.add_handler(CallbackQueryHandler(send_leaderboard_callback, pattern="^get_leaderboard_"))
+    application.add_handler(CallbackQueryHandler(admin_stats_callback, pattern="^admin_stats$"))
     
     # Conversations
     application.add_handler(create_test_conv)
@@ -120,6 +121,9 @@ def main():
     application.add_handler(broadcast_conv)
     application.add_handler(register_conv)
     
+    # Static Menu Handler (Global)
+    application.add_handler(MessageHandler(filters.Regex(r"^(📢 Kanalimiz|📞 Admin)"), handle_static_menu))
+
     # Submission Listener (Regex match)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex(r'^\d+\*'), handle_submission))
     

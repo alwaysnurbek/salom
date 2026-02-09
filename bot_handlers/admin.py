@@ -17,23 +17,40 @@ async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Kirish taqiqlangan.")
         return
 
-    keyboard = [
-        [InlineKeyboardButton("➕ Test Yaratish", callback_data="admin_create_test")],
-        [InlineKeyboardButton("🗂 Testlarni Boshqarish", callback_data="admin_manage_tests")],
-        [InlineKeyboardButton("📊 Natijalar (Leaderboard)", callback_data="admin_leaderboard_menu")],
-        [InlineKeyboardButton("📢 Xabar Yuborish (Broadcast)", callback_data="admin_broadcast_start")],
-        [InlineKeyboardButton("⚙️ Admin Yordam", callback_data="admin_help")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    text = "Admin Panel:"
+    text = f"👨‍💼 <b>Admin Panel</b>\n\nXush kelibsiz, {user.first_name}!"
+    reply_markup = InlineKeyboardMarkup(ADMIN_KEYBOARD)
+
     if update.callback_query:
         # avoid "message is not modified" error
         try:
-            await update.callback_query.message.edit_text(text, reply_markup=reply_markup)
+            await update.callback_query.message.edit_text(text, reply_markup=reply_markup, parse_mode='HTML')
         except Exception:
-            await update.callback_query.message.reply_text(text, reply_markup=reply_markup)
+            await update.callback_query.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML')
     else:
-        await update.message.reply_text(text, reply_markup=reply_markup)
+        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='HTML')
+
+async def admin_home_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(
+        "👨‍💼 <b>Admin Panel</b>",
+        reply_markup=InlineKeyboardMarkup(ADMIN_KEYBOARD),
+        parse_mode='HTML'
+    )
+
+async def admin_stats_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    count = db.get_user_count()
+    
+    keyboard = [[InlineKeyboardButton("⬅️ Orqaga", callback_data="admin_home")]]
+    await query.edit_message_text(
+        f"📈 <b>Statistika</b>\n\n"
+        f"👤 Jami foydalanuvchilar: <b>{count}</b> ta",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode='HTML'
+    )
 
 async def admin_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query

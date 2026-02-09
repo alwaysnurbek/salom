@@ -9,6 +9,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Static Main Menu Keyboard
+MAIN_MENU = [
+    ["📢 Kanalimiz (Obuna bo'ling)"],
+    ["📞 Admin bilan aloqa"]
+]
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
@@ -33,8 +39,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"Xush kelibsiz, {db_user['full_name']}! 👋\n\n"
             "Test ishlashga tayyormisiz? Javoblarni yuborish uchun quyidagi formatdan foydalaning:\n\n"
-            "<code>TestID*Javoblar</code> (masalan: <code>101*abcde...</code>)"
-        , parse_mode='HTML')
+            "<code>TestID*Javoblar</code> (masalan: <code>101*abcde...</code>)",
+            parse_mode='HTML',
+            reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True)
+        )
         return ConversationHandler.END
         
     await update.message.reply_text(
@@ -53,14 +61,13 @@ async def check_subscription_callback(update: Update, context: ContextTypes.DEFA
     is_sub = await check_is_subscribed(context.bot, user.id)
     if is_sub:
         await query.message.delete()
-        # Trigger start manually or just ask for name?
-        # Let's simulate /start logic
         db_user = db.get_user_by_tg_id(user.id)
         if db_user:
             await context.bot.send_message(
                 chat_id=user.id,
                 text=f"Xush kelibsiz, {db_user['full_name']}! 👋\n\nTestID*Javoblar formatida yuboring.",
-                parse_mode='HTML'
+                parse_mode='HTML',
+                reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True)
             )
         else:
             await context.bot.send_message(
@@ -71,10 +78,6 @@ async def check_subscription_callback(update: Update, context: ContextTypes.DEFA
                 ),
                 parse_mode='HTML'
             )
-            # We need to enter the conversation state. 
-            # Note: CallbackQueryHandler cannot easily "return REGISTER_NAME" to the parent *ConversationHandler* 
-            # if this callback acts as an entry point.
-            # Strategy: Make this callback an entry point too.
             return REGISTER_NAME
     else:
         await query.message.reply_text("❌ Hali kanalga a'zo bo'lmadingiz. Iltimos, qaytadan urinib ko'ring.", quote=False)
@@ -115,9 +118,30 @@ async def register_region(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👉 <code>TestID*Javoblar</code>\n\n"
         "<i>Misol:</i> <code>105*abcdac...</code>",
         parse_mode='HTML',
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True)
     )
     return ConversationHandler.END
+
+async def handle_static_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    user = update.effective_user
+    
+    if "Kanalimiz" in text:
+        # Send channel link with inline button
+        keyboard = [[InlineKeyboardButton("Kanalga o'tish ↗️", url=f"https://t.me/{config.REQUIRED_CHANNEL_USERNAME}")]]
+        await update.message.reply_text(
+            f"<b>BluePrep Academy</b> rasmiy kanali!\n\n"
+            "Eng so'nggi yangiliklar, testlar va natijalar shu kanalda e'lon qilinadi 👇",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='HTML'
+        )
+    elif "Admin" in text:
+        # Send admin contact
+        keyboard = [[InlineKeyboardButton("Admin bilan bog'lanish 👨‍💻", url="https://t.me/blueprep_admin")]]
+        await update.message.reply_text(
+            "Savollar, takliflar yoki muammolar bo'lsa, adminga murojaat qiling:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 async def handle_submission(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
@@ -128,21 +152,16 @@ async def handle_submission(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     test_id_str, raw_answers = parts
     
-    # 1. Check user exists
+    # Check user/test/time logic same as before...
     user = update.effective_user
     db_user = db.get_user_by_tg_id(user.id)
     if not db_user:
         await update.message.reply_text("Iltimos, avval /start buyrug'ini bosing.")
         return
 
-    # 1.5 Check Sub (Extra safety, though maybe annoying if frequent checking. Let's skip for submission for speed, or cache it? 
-    # Spec says "proceed using the bot". 
-    # Let's check on start primarily. Checking on every msg is too slow/rate limited.)
-    
     test_id = int(test_id_str)
-
-    # 2. Check test
     test = db.get_test(test_id)
+    
     if not test:
         await update.message.reply_text(f"❌ Test #{test_id} topilmadi.")
         return
@@ -155,7 +174,6 @@ async def handle_submission(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Xatolik: Test kaliti yo'q.")
         return
 
-    # 3. Check time
     now = datetime.now()
     if test['end_at'] and isinstance(test['end_at'], str):
         end_at_dt = datetime.fromisoformat(test['end_at'])
@@ -166,10 +184,8 @@ async def handle_submission(update: Update, context: ContextTypes.DEFAULT_TYPE):
          await update.message.reply_text("⏰ Test vaqti tugagan.")
          return
 
-    # 4. Normalize
     normalized = normalize_answers(raw_answers)
     
-    # 5. Check length
     if len(normalized) != test['num_questions']:
         await update.message.reply_text(
             f"❌ Javoblar soni noto'g'ri.\n"
@@ -178,15 +194,12 @@ async def handle_submission(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # 6. Check duplicate
     existing = db.get_submission(test_id, db_user['id'])
     if existing:
         await update.message.reply_text(f"⚠️ Siz Test #{test_id} ga javob yuborgansiz.")
         return
 
-    # 7. Grade
     correct, wrong, percent = grade_submission(normalized, test['answer_key'])
-    
     started_at = now
     time_taken = 0
     
@@ -213,6 +226,6 @@ async def handle_invalid_message(update: Update, context: ContextTypes.DEFAULT_T
         "Test javoblarini yuborish uchun quyidagi formatdan foydalaning:\n"
         "<code>TestID*Javoblar</code>\n\n"
         "Misol: <code>101*abcde...</code>\n"
-        "Ro'yxatdan o'tish uchun: /start"
+        "Yoki pastdagi menyudan foydalaning 👇"
     )
-    await update.message.reply_text(msg, parse_mode='HTML')
+    await update.message.reply_text(msg, parse_mode='HTML', reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True))

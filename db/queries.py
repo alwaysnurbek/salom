@@ -37,11 +37,20 @@ def get_user_by_tg_id(tg_user_id):
 
 def get_all_users():
     conn = get_connection()
-    c = conn.cursor()
-    c.execute('SELECT tg_user_id FROM users')
-    rows = c.fetchall()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users") # Only fetch ID is enough for broadcasting to avoid huge data transfer if not needed
+    rows = cursor.fetchall()
     conn.close()
-    return rows
+    return [row['id'] for row in rows]
+
+def get_user_count() -> int:
+    """Returns the total number of registered users."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM users")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
 
 # --- Test Queries ---
 def create_test(title, num_questions, duration_hours):
