@@ -19,6 +19,26 @@ TIMEZONE = os.getenv("TIMEZONE", "UTC")
 DB_PATH = "bluebot.db"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# FIX: Sanitize URL and force IPv4 resolution for Supabase on Railway
+if DATABASE_URL:
+    # 1. Remove brackets if user accidentally included them around password
+    DATABASE_URL = DATABASE_URL.replace('[', '').replace(']', '')
+    
+    # 2. Force IPv4 resolution to avoid "Network is unreachable" on IPv6
+    try:
+        from urllib.parse import urlparse, urlunparse
+        import socket
+        
+        parsed = urlparse(DATABASE_URL)
+        if parsed.hostname:
+            ipv4_address = socket.gethostbyname(parsed.hostname)
+            # Replace hostname with resolved IPv4 address
+            DATABASE_URL = DATABASE_URL.replace(parsed.hostname, ipv4_address)
+            logging.info(f"Resolved database host {parsed.hostname} to {ipv4_address}")
+            
+    except Exception as e:
+        logging.warning(f"Failed to resolve database hostname to IPv4: {e}")
+
 # Logging setup
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
