@@ -36,6 +36,7 @@ from db.init_db import init_db
 init_db()
 
 def main():
+    print("Bot is starting...")
     if not config.BOT_TOKEN:
         print("Error: BOT_TOKEN not found in .env")
         return
