@@ -3,3 +3,4 @@ openpyxl
 apscheduler
 python-dotenv
 pytz
+psycopg2-binary

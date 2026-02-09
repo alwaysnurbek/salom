@@ -15,8 +15,9 @@ for x in admin_ids_str.split(","):
 
 TIMEZONE = os.getenv("TIMEZONE", "UTC")
 
-# Database path
+# Database path (Backward compatibility or local fallback)
 DB_PATH = "bluebot.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Logging setup
 logging.basicConfig(
