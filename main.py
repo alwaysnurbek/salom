@@ -18,7 +18,7 @@ apscheduler.util.astimezone = patched_astimezone
 
 # Now import the rest
 import config
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler, JobQueue
+from telegram.ext import Application, ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler, JobQueue
 from bot_handlers.admin import (
     admin_start, admin_help, admin_home_callback,
     start_create_test, receive_title, receive_questions, receive_duration, confirm_creation,
@@ -27,7 +27,7 @@ from bot_handlers.admin import (
     admin_leaderboard_menu, send_leaderboard_callback,
     start_broadcast, send_broadcast, admin_stats_callback
 )
-from bot_handlers.user import start, register_name, register_region, handle_submission, handle_invalid_message
+from bot_handlers.user import start, register_name, register_region, handle_submission, handle_invalid_message, handle_static_menu
 from bot_handlers.common import cancel, ASK_TITLE, ASK_QUESTIONS, ASK_DURATION, ASK_CONFIRM, ASK_ANSWER_KEY, REGISTER_NAME, REGISTER_REGION, ASK_BROADCAST_MSG
 from scheduler.jobs import check_active_tests
 from db.init_db import init_db

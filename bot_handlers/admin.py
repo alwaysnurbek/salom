@@ -11,6 +11,22 @@ import config
 
 logger = logging.getLogger(__name__)
 
+
+ADMIN_KEYBOARD = [
+    [
+        InlineKeyboardButton("➕ Test Yaratish", callback_data="admin_create_test"),
+        InlineKeyboardButton("📝 Testlar", callback_data="admin_manage_tests")
+    ],
+    [
+        InlineKeyboardButton("📊 Natijalar", callback_data="admin_leaderboard_menu"),
+        InlineKeyboardButton("📢 Xabar Yuborish", callback_data="admin_broadcast_start")
+    ],
+    [
+        InlineKeyboardButton("📈 Statistika", callback_data="admin_stats"),
+        InlineKeyboardButton("❓ Yordam", callback_data="admin_help")
+    ]
+]
+
 async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if not is_admin(user.id):
