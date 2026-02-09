@@ -25,7 +25,7 @@ from bot_handlers.admin import (
     manage_tests, view_test, start_test_callback, end_test_callback,
     set_key_start, receive_answer_key,
     admin_leaderboard_menu, send_leaderboard_callback,
-    start_broadcast, send_broadcast
+    start_broadcast, send_broadcast, admin_stats_callback
 )
 from bot_handlers.user import start, register_name, register_region, handle_submission, handle_invalid_message
 from bot_handlers.common import cancel, ASK_TITLE, ASK_QUESTIONS, ASK_DURATION, ASK_CONFIRM, ASK_ANSWER_KEY, REGISTER_NAME, REGISTER_REGION, ASK_BROADCAST_MSG
@@ -57,7 +57,21 @@ def main():
             return conf
 
     job_queue = FixedJobQueue()
-    application = ApplicationBuilder().token(config.BOT_TOKEN).job_queue(job_queue).build()
+    # Post-init hook to notify admins
+    async def on_startup(app: Application):
+        for admin_id in config.ADMIN_USER_IDS:
+            try:
+                await app.bot.send_message(chat_id=admin_id, text="🤖 <b>Bot qayta ishga tushdi!</b>\n\nYangilanishlar muvaffaqiyatli yuklandi.", parse_mode='HTML')
+            except Exception as e:
+                logging.error(f"Failed to notify admin {admin_id}: {e}")
+
+    application = (
+        ApplicationBuilder()
+        .token(config.BOT_TOKEN)
+        .job_queue(job_queue)
+        .post_init(on_startup)
+        .build()
+    )
     
     # --- Admin Conversations ---
     
