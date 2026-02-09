@@ -2,3 +2,4 @@ python-telegram-bot==20.*
 openpyxl
 apscheduler
 python-dotenv
+pytz
